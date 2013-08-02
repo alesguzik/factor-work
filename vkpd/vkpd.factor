@@ -8,6 +8,12 @@ CONSTANT: lastfm-apikey "9ed8ca94e596f58b4068588500d66d54"
 CONSTANT: vk-access-token
 "03f8282439cf3db6a309a7a63fe0367b9e5957b5bbeb61bd14f826708968abc9897851018d7ece3216f26"
 
+TUPLE: song artist title ;
+C: song <song>
+
+TUPLE: lastfm-query method params ;
+: <lastfm-query> ( method -- ) H{ } lastfm-query boa ;
+
 : query-lastfm ( params -- xml )
     lastfm-apikey "api_key" rot ?set-at
     assoc>query "http://ws.audioscrobbler.com/2.0/?" swap 2array concat
@@ -24,8 +30,12 @@ CONSTANT: vk-access-token
     "user" H{ { "method" "user.getrecenttracks" } } ?set-at
     query-lastfm "recenttracks" tag-named "track" tags-named ;
 
-: recent-tracks ( user -- strings )
-    recent-tracks-xml [
+: top-tracks-xml ( artist -- top-tracks-xml )
+    "artist" H{ "method" "artist.gettoptracks" } } ?set-at
+    query-lastfm "toptracks" tag-named "track" tags-named ;
+
+: xml>tracks ( xml-tracks -- strings )
+    [
         [ "artist" tag-named children>string ]
         [ "name" tag-named children>string ]
         bi 2array
@@ -54,7 +64,7 @@ CONSTANT: vk-access-token
 
 : add-recent-user-songs ( user n -- )
     swap
-      recent-tracks >vector dup
+      recent-tracks-xml xml>tracks >vector dup
       [ shorten ] dip
     [ first2 add-song ] each ;
 
