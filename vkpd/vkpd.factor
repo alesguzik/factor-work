@@ -1,15 +1,21 @@
 #! /usr/bin/env factor
 USING: kernel arrays sequences hashtables vectors formatting command-line math.parser
-       http.client xml io.sockets.secure urls.encoding xml.traversal libc ;
+       http.client xml io.sockets.secure urls.encoding xml.traversal libc namespaces ;
 IN: vkpd
 
 CONSTANT: lastfm-apikey "9ed8ca94e596f58b4068588500d66d54"
 
-CONSTANT: vk-access-token
-"03f8282439cf3db6a309a7a63fe0367b9e5957b5bbeb61bd14f826708968abc9897851018d7ece3216f26"
+SYMBOL: vk-access-token
+"03f8282439cf3db6a309a7a63fe0367b9e5957b5bbeb61bd14f826708968abc9897851018d7ece3216f26" vk-access-token set
+
+TUPLE: artist name ;
+C: artist <artist>
 
 TUPLE: song artist title ;
 C: song <song>
+
+TUPLE: album artist title ;
+C: album <album>
 
 TUPLE: lastfm-query method params ;
 : <lastfm-query> ( method -- ) H{ } lastfm-query boa ;
@@ -22,7 +28,7 @@ TUPLE: lastfm-query method params ;
 : query-vk ( params method -- result )
     "https://api.vk.com/method/" 2array reverse ".xml?" suffix
     swap
-    vk-access-token "access_token" rot ?set-at assoc>query
+    vk-access-token get "access_token" rot ?set-at assoc>query
     suffix concat
     http-get nip string>xml ;
 
@@ -31,7 +37,7 @@ TUPLE: lastfm-query method params ;
     query-lastfm "recenttracks" tag-named "track" tags-named ;
 
 : top-tracks-xml ( artist -- top-tracks-xml )
-    "artist" H{ "method" "artist.gettoptracks" } } ?set-at
+    "artist" H{ { "method" "artist.gettoptracks" } } ?set-at
     query-lastfm "toptracks" tag-named "track" tags-named ;
 
 : xml>tracks ( xml-tracks -- strings )
